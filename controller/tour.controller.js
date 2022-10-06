@@ -1,10 +1,31 @@
-const { getTourService, createTourServices } = require("../services/tour.services")
+const { getTourService, createTourServices, updateTourService, deleteTourService } = require("../services/tour.services")
 
 
 
 exports.getTours = async (req, res, next) => {
     try {
-        const AllTour = await getTourService()
+
+        const filters = { ...req.query }
+        //sort limit page => exclude
+        const excludeField = ["sort", "limit", "page"]
+        excludeField.forEach(field => delete filters[field])
+
+        //gt lt gte lte
+        let filtersString = JSON.stringify(filters)
+        filtersString = filtersString.replace(/\b(gt | gte | lt | lte)\b/g, match => `$${match}`)
+        console.log(filtersString);
+
+        const queries = {}
+        if (req.query.sort) {
+            const sortBy = req.query.sort.split(',').join(' ')
+            queries.sortBy = sortBy
+        }
+        if (req.query.fields) {
+            const fields = req.query.fields.split(',').join(' ')
+            queries.fields = fields
+        }
+
+        const AllTour = await getTourService(filters, queries)
         res.status(200).json({
             status: 'success',
             message: "your allTour successfully get",
@@ -43,6 +64,48 @@ exports.createTour = async (req, res, next) => {
             error: error.message,
 
 
+        })
+
+    }
+}
+
+exports.updateTour = async (req, res, next) => {
+    try {
+        const { id } = req.params
+        const result = await updateTourService(id, req.body)
+        res.status(200).json({
+            status: 'success',
+            message: 'update successfully',
+            data: result
+        })
+    }
+    catch (error) {
+        res.status(400).json({
+            status: 'failed',
+            message: 'Could not update the tour',
+            error: error.message,
+
+
+        })
+
+    }
+}
+
+exports.deleteTour = async (req, res, next) => {
+    try {
+        const { id } = req.params
+        const result = await deleteTourService(id)
+        res.status(200).json({
+            status: 'success',
+            message: 'delete successfully',
+            data: result
+        })
+    }
+    catch (error) {
+        res.status(400).json({
+            status: 'failed',
+            message: 'Could not delete the tour',
+            error: error.message,
         })
 
     }
